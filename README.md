@@ -269,7 +269,9 @@ pytest tests/ -v
 
 ## 📬 Contact
 
-**Telegram:** [@galileo0000](https://t.me/galileo0000) – questions, setup help, or feedback.
+I have years of real trading experience building and running automation like this in live markets. If you want help tailoring the bot to your strategy and improving your results, feel free to contact me on Telegram any time.
+
+[![Telegram](https://img.shields.io/badge/Telegram-Contact%20me-blue?style=for-the-badge&logo=telegram)](https://t.me/galileo0000)
 
 ---
 
