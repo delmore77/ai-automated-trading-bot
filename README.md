@@ -12,24 +12,13 @@ Your TradingView setup stays the same. When your alert fires, this bot places th
 
 *With consistent execution and risk controls, the bot can target **stable daily profit in the 0.7–3.6%** range (results depend on your strategy, market conditions, and risk settings).*
 
-### Dashboard screenshots (images folder)
+### Dashboard
 
-| | |
-|---|---|
-| ![Screenshot 0](images/Screenshot_0.png) | ![Screenshot 1](images/Screenshot_1.png) |
-| *Screenshot 0* | *Screenshot 1* |
-| ![Screenshot 2](images/Screenshot_2.png) | ![Screenshot 3](images/Screenshot_3.png) |
-| *Screenshot 2* | *Screenshot 3* |
-
-### Demo video
-
-<video src="videos/video_0.mp4" controls width="640" style="max-width:100%; border-radius:8px; border:1px solid #1e2128;"></video>
-
-*[Open or download video](videos/video_0.mp4) if the player above is not supported.*
+The **dashboard** (`GET /dashboard`) shows exchange status, USDT balance, daily PnL, recent orders, metrics, and a Live/Testnet switch. It auto-refreshes every 30 seconds. Optional: add your own screenshots in `images/` and a demo video in `videos/` (e.g. `images/Screenshot_0.png`, `videos/video_0.mp4`) to showcase the UI.
 
 ---
 
-## 💹 Exceute Fast. Risk Under Control.
+## 💹 Execute Fast. Risk Under Control.
 
 Manual traders get speed without giving up control: max size, daily loss limit, symbol allowlist, and optional LLM review before every order.
 
@@ -122,6 +111,8 @@ The **Live / Testnet** switch in the dashboard header applies to **all** configu
 
 ## 🚀 Quick Start
 
+**Requirements:** Python 3.10+
+
 1. **Install**
    ```bash
    cd ai-automated-trading-bot
@@ -140,7 +131,7 @@ The **Live / Testnet** switch in the dashboard header applies to **all** configu
    ```
    Server: `http://0.0.0.0:8000` → Webhook: `POST /webhook`
 
-4. **TradingView alert** – Message (JSON) example:
+4. **TradingView alert** – Send a JSON body to `POST /webhook`. Required: `secret`, `exchange`, `symbol`, `side`, `size_usdt`. Optional: `leverage`, `take_profit`, `stop_loss`, `trailing_stop`, `trailing_activation_pct`, `request_id`. Example:
    ```json
    {
      "secret": "your_webhook_secret_here",
@@ -156,7 +147,25 @@ The **Live / Testnet** switch in the dashboard header applies to **all** configu
      "request_id": "alert-123"
    }
    ```
-   Use `request_id` (e.g. alert id) to avoid duplicate orders when the same alert fires twice.
+   Use `request_id` (e.g. alert id) to avoid duplicate orders when the same alert fires twice. If `REQUIRE_WEBHOOK_SECRET` is false, you can send `"secret": ""`.
+
+---
+
+## 📁 Project structure
+
+| Path | Purpose |
+|------|---------|
+| `main.py` | Entrypoint; runs uvicorn with `server:app`. |
+| `server.py` | FastAPI app: webhook, signals, health, metrics, status, dashboard, balance, exchange status, network switch. |
+| `config.py` | Pydantic settings from env (`.env`). |
+| `models.py` | `WebhookPayload`, `Side`, `ExchangeName`. |
+| `risk.py` | Risk checks (allowlist, size, per-symbol/total exposure, leverage, daily loss, cooldown, spread). |
+| `db.py` | SQLite: idempotency, order history, risk state. |
+| `tpsl.py` | Take-profit/stop-loss placement after order. |
+| `trailing_stop.py` | Trailing-stop pending list and background loop. |
+| `exchanges/` | `base.py`, `registry.py`, `binance.py`, `bybit.py`, `okx.py`, `hyperliquid.py` (CCXT or native). |
+| `ai/` | `llm.py` (OpenAI-compatible), `enhancer.py`, `advisor.py`, `signals.py`. |
+| `static/dashboard.html` | Single-page dashboard (Tailwind, Lightweight Charts). |
 
 ---
 
@@ -165,44 +174,67 @@ The **Live / Testnet** switch in the dashboard header applies to **all** configu
 | Endpoint | Description |
 |----------|-------------|
 | `GET /` | Redirects to `/dashboard`. |
-| `GET /dashboard` | **Professional dashboard**: exchange status, activity metrics, daily PnL, recent orders. Auto-refresh every 30s. |
+| `GET /dashboard` | **Dashboard**: exchange status, USDT balance, daily PnL, recent orders, metrics, Live/Testnet switch. Auto-refresh every 30s. |
 | `POST /webhook` | TradingView webhook; optional AI enhancer + advisor, then risk + execution. |
 | `POST /signals/generate` | AI signal (buy/sell/hold); optional `execute=true` for same risk + execution as webhook. |
-| `GET /health` | Liveness |
-| `GET /health/exchanges` | Per-exchange connectivity |
-| `GET /metrics` | Counters (webhooks, orders, rejections, etc.) |
-| `GET /status` | Recent orders, daily PnL by exchange, cooldown, dry_run |
+| `GET /health` | Liveness. |
+| `GET /health/exchanges` | Per-exchange connectivity (balance/read check). |
+| `GET /exchanges/status` | Which exchanges are connected (allowed to receive orders). |
+| `PUT /exchanges/status` | Set connect/disconnect per exchange. Body: `{"binance": true, "bybit": false, ...}`. |
+| `GET /balance` | USDT balance per exchange (from `fetch_balance`). `null` if exchange disconnected or unavailable. |
+| `GET /metrics` | Counters: webhooks received/duplicate/rate-limited/auth failed/risk rejected, orders placed/failed/dry_run, tpsl_placed/failed, errors. |
+| `GET /status` | Recent orders, daily PnL by exchange, cooldown, dry_run, use_testnet. |
+| `PUT /settings/network` | Switch all exchanges between live and testnet. Body: `{"use_testnet": true \| false}`. Clears cached API clients. |
 
 ---
 
 ## ⚙️ Environment Variables
 
+Copy `.env.example` to `.env` and fill in your values. All variables are optional except those needed for the features you use.
+
 | Variable | Description |
 |----------|-------------|
-| `WEBHOOK_SECRET` | Must match `secret` in webhook when `REQUIRE_WEBHOOK_SECRET=true` |
-| `REQUIRE_WEBHOOK_SECRET` | Reject wrong/missing secret (default true) |
-| `RATE_LIMIT_PER_MINUTE` | Max webhook requests per minute per IP (default 30) |
-| `IDEMPOTENCY_TTL_SECONDS` | How long to remember request_id (default 86400) |
-| `MAX_POSITION_SIZE_USDT` | Max single order size (USDT) |
-| `MAX_LEVERAGE` | Max leverage |
-| `MAX_DAILY_LOSS_USDT` | Stop new orders when daily loss reaches this |
-| `ALLOWED_SYMBOLS` | Comma-separated symbols |
-| `MAX_POSITION_PER_SYMBOL_USDT` | Per-symbol cap (0 = use global max only) |
-| `MAX_TOTAL_EXPOSURE_USDT` | Cap on total open notional (0 = disabled) |
-| `COOLDOWN_AFTER_LOSS_MINUTES` | Block new orders for N minutes after daily loss limit |
-| `MAX_SPREAD_PCT` | Reject if (ask-bid)/mid > this (0 = disabled) |
-| `DRY_RUN` | If true, no real orders |
-| `ORDER_RETRIES` | Retries for place_market_order (default 2) |
-| `DB_PATH` | SQLite file for idempotency and order history |
-| **AI** | |
-| `OPENAI_API_KEY` | Required for advisor, enhancer, signals |
-| `OPENAI_BASE_URL` | Optional (e.g. Azure or local proxy) |
-| `LLM_MODEL` | Model name (default gpt-4o-mini) |
-| `LLM_ADVISOR_ENABLED` | LLM approve/reject/modify before each order |
-| `AI_ENHANCER_ENABLED` | LLM filter/adjust TradingView alerts |
-| `AI_SIGNAL_ENABLED` | Enable `POST /signals/generate` |
-| `AI_SIGNAL_SECRET` | Optional; required in body when `execute=true` |
-| Exchange keys | `BINANCE_*`, `BYBIT_*`, `OKX_*`, `HYPERLIQUID_*` |
+| **Webhook** | |
+| `WEBHOOK_SECRET` | Must match `secret` in webhook body when `REQUIRE_WEBHOOK_SECRET=true`. Leave empty to allow any secret when requirement is false. |
+| `REQUIRE_WEBHOOK_SECRET` | Reject wrong/missing secret (default: true). If true and `WEBHOOK_SECRET` is empty, all requests pass. |
+| `RATE_LIMIT_PER_MINUTE` | Max webhook requests per minute per client IP (default: 30). |
+| `IDEMPOTENCY_TTL_SECONDS` | How long to remember `request_id` to avoid duplicate orders (default: 86400). |
+| **Exchanges** | |
+| `BINANCE_API_KEY`, `BINANCE_API_SECRET` | Binance futures. Leave empty to disable. |
+| `BINANCE_TESTNET` | Use Binance testnet (default: false). Overridden by dashboard Live/Testnet when set. |
+| `BYBIT_API_KEY`, `BYBIT_API_SECRET` | Bybit. Leave empty to disable. |
+| `BYBIT_TESTNET` | Use Bybit testnet (default: false). |
+| `OKX_API_KEY`, `OKX_API_SECRET`, `OKX_PASSPHRASE` | OKX. Leave empty to disable. |
+| `OKX_SANDBOX` | Use OKX sandbox (default: false). |
+| `HYPERLIQUID_PRIVATE_KEY` | Hyperliquid (required). `HYPERLIQUID_WALLET_ADDRESS` optional. |
+| `HYPERLIQUID_TESTNET` | Use Hyperliquid testnet (default: false). |
+| **Risk** | |
+| `MAX_POSITION_SIZE_USDT` | Cap single order size (USDT). |
+| `MAX_LEVERAGE` | Cap leverage; never reject for leverage alone. |
+| `MAX_DAILY_LOSS_USDT` | Reject new orders when today’s realized loss reaches this. |
+| `ALLOWED_SYMBOLS` | Comma-separated symbol allowlist (e.g. `BTCUSDT,ETHUSDT`). Empty = allow all. |
+| `MAX_POSITION_PER_SYMBOL_USDT` | Per-symbol exposure cap (0 = use global max only). |
+| `MAX_TOTAL_EXPOSURE_USDT` | Cap on total open notional (0 = disabled). |
+| `COOLDOWN_AFTER_LOSS_MINUTES` | Block new orders for N minutes after hitting daily loss limit. |
+| `MAX_SPREAD_PCT` | Reject if (ask−bid)/mid > this (0 = disabled). |
+| **Execution** | |
+| `DRY_RUN` | If true, no real orders are sent. |
+| `ORDER_RETRIES` | Retries for place_market_order (default: 2). |
+| `ORDER_RETRY_DELAY_SECONDS` | Delay between retries (default: 1.0). |
+| **Trailing stop** | |
+| `TRAILING_STOP_CHECK_INTERVAL_SECONDS` | Interval for trailing-stop background loop (default: 30). |
+| **DB & server** | |
+| `DB_PATH` | SQLite file for idempotency, order history, and risk state (default: webhook_bot.db). |
+| `HOST` | Bind address (default: 0.0.0.0). |
+| `PORT` | Server port (default: 8000). |
+| **AI / LLM** | |
+| `OPENAI_API_KEY` | Required for advisor, enhancer, and signals. |
+| `OPENAI_BASE_URL` | Optional (e.g. Azure or local proxy). |
+| `LLM_MODEL` | Model name (default: gpt-4o-mini). |
+| `LLM_ADVISOR_ENABLED` | LLM approve/reject/modify before each order (default: false). |
+| `AI_ENHANCER_ENABLED` | LLM filter/adjust TradingView alerts (default: false). |
+| `AI_SIGNAL_ENABLED` | Enable `POST /signals/generate` (default: false). |
+| `AI_SIGNAL_SECRET` | If set, body must include matching `secret` when calling with `execute=true`. |
 
 ---
 
