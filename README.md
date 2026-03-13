@@ -14,7 +14,26 @@ Your TradingView setup stays the same. When your alert fires, this bot places th
 
 ### Dashboard
 
-The **dashboard** (`GET /dashboard`) shows exchange status, USDT balance, daily PnL, recent orders, metrics, and a Live/Testnet switch. It auto-refreshes every 30 seconds. Optional: add your own screenshots in `images/` and a demo video in `videos/` (e.g. `images/Screenshot_0.png`, `videos/video_0.mp4`) to showcase the UI.
+The **dashboard** (`GET /dashboard`) shows exchange status, USDT balance, daily PnL, recent orders, metrics, and a Live/Testnet switch. It auto-refreshes every 30 seconds.
+
+#### Screenshots
+
+| | |
+|---|---|
+| ![Screenshot 0](images/Screenshot_0.png) | ![Screenshot 1](images/Screenshot_1.png) |
+| *Screenshot 0* | *Screenshot 1* |
+| ![Screenshot 2](images/Screenshot_2.png) | ![Screenshot 3](images/Screenshot_3.png) |
+| *Screenshot 2* | *Screenshot 3* |
+
+Add your own files: `images/Screenshot_0.png` … `Screenshot_3.png`.
+
+#### Demo video
+
+<video src="videos/video_0.mp4" controls width="640" style="max-width:100%; border-radius:8px; border:1px solid #1e2128;"></video>
+
+*[Open or download video](videos/video_0.mp4) if the player above is not supported.*
+
+Add your demo: `videos/video_0.mp4`.
 
 ---
 
