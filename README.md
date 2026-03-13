@@ -1,6 +1,6 @@
 # 📈 TradingView Webhook Bot – Auto Execute Crypto Strategies
 
-> **For manual traders:** Keep your edge on the chart. Execute on exchange in seconds—with risk limits, TP/SL, and optional AI. No coding required once it’s set up.
+> **For traders:** Keep your edge on the chart. Execute on exchange in seconds—with risk limits, TP/SL, and optional AI. No coding required once it’s set up.
 
 [![Telegram](https://img.shields.io/badge/Telegram-Contact%20me-blue?style=for-the-badge&logo=telegram)](https://t.me/galileo0000)
 
@@ -39,7 +39,7 @@ Add your demo: `videos/video_0.mp4`.
 
 ## 💹 Execute Fast. Risk Under Control.
 
-Manual traders get speed without giving up control: max size, daily loss limit, symbol allowlist, and optional LLM review before every order.
+Traders get speed without giving up control: max size, daily loss limit, symbol allowlist, and optional LLM review before every order.
 
 ---
 
