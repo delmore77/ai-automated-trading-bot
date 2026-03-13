@@ -1,0 +1,41 @@
+.env
+.env.local
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+*.log
+.DS_Store
+static/dashboard_test.html
+
+# Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Local DB / data
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Coverage / reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+Thumbs.db
